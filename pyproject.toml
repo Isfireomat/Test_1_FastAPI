@@ -13,7 +13,8 @@ psycopg2 = "^2.9.10"
 sqlalchemy = "^2.0.36"
 asyncpg = "^0.30.0"
 pytest = "^8.3.4"
-fastapi-crudrouter = {extras = ["sqlalchemy"], version = "^0.8.6"}
+pytest-asyncio = "^0.24.0"
+httpx = "^0.28.1"
 
 
 [build-system]

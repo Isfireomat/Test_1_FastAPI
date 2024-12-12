@@ -3,7 +3,7 @@ services:
     build: .
     container_name: Test_1_FastAPI
     ports:
-      - "8000:8000"
+      - "${PORT}:8000"
     depends_on:
       - db
     env_file:

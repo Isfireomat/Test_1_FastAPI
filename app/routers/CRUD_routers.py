@@ -4,32 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi_crudrouter import SQLAlchemyCRUDRouter
-from data_base import get_session, get_book_by_id, create_borrow, \
+from app.data_base import get_session, get_book_by_id, create_borrow, \
                       get_borrow_by_id, update_return_date_borrow, \
                       update_book_count_available_by_id
-from models import Author, Book, Borrow, \
+from app.models import Author, Book, Borrow, \
                    AuthorSchema, BookSchema, BorrowSchema, \
                    BorrowCreateSchema
 
-author_router = SQLAlchemyCRUDRouter(
-    schema=AuthorSchema,
-    db_model=Author,
-    db=get_session()   
-)
-
-book_router = SQLAlchemyCRUDRouter(
-    schema=BookSchema,
-    db_model=Book,
-    db=get_session()   
-)
-
-borrow_router = SQLAlchemyCRUDRouter(
-    schema=BorrowSchema,
-    db_model=Borrow,
-    db=get_session()   
-)
-
-@borrow_router.post('/borrows', routing_model=BorrowSchema)
+@borrow_router.post('/api/borrows', routing_model=BorrowSchema)
 async def borrows_create(
                         response: Response, 
                         borrow: BorrowCreateSchema,
@@ -101,7 +83,7 @@ async def borrows_create(
     
     return borrow
 
-@book_router.patch('/borrows/{id}/return', routing_model=BorrowSchema)
+@book_router.patch('/api/borrows/{id}/return', routing_model=BorrowSchema)
 async def borrows_return(
                     response: Response,
                     id: int,

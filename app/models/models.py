@@ -34,6 +34,9 @@ class Author(Base):
         nullable=False
     )
 
+
+    class Config:
+        orm_mode = True
 class Book(Base):
     """
     Book (Книга): id, название, описание, 
@@ -68,6 +71,10 @@ class Book(Base):
     )
 
 
+    class Config:
+        orm_mode = True
+
+
 class Borrow(Base):
     """
     Borrow (Выдача): id, id книги, имя читателя, дата выдачи, 
@@ -100,4 +107,8 @@ class Borrow(Base):
                         ),
         nullable=True
     )
+    
+    
+    class Config:
+        orm_mode = True
     

@@ -2,8 +2,8 @@ from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import insert, update
-from data_base import get_session
-from models import Book, Borrow, BorrowCreateSchema
+from app.data_base import get_session
+from app.models import Book, Borrow, BorrowCreateSchema
 from datetime import date
 
 async def get_book_by_id(

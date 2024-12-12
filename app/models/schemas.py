@@ -1,4 +1,4 @@
-from typing import Date
+from datetime import date
 from pydantic import BaseModel, Field, model_validator
 
 class AuthorSchema(BaseModel):
@@ -10,7 +10,7 @@ class AuthorSchema(BaseModel):
         min_length=1, 
         max_length=64
         )
-    birthday: Date
+    birthday: date
 
 class BookSchema(BaseModel):
     title: str = Field(
@@ -35,8 +35,8 @@ class BorrowSchema(BaseModel):
         min_length=1, 
         max_length=64
         )
-    date_borrow: Date
-    date_refund: Date
+    date_borrow: date
+    date_refund: date
 
     @model_validator(mode='before')
     def check_dates(cls, values):
@@ -59,5 +59,5 @@ class BorrowCreateSchema(BaseModel):
         min_length=1, 
         max_length=64
         )
-    date_borrow: Date
+    date_borrow: date
     
