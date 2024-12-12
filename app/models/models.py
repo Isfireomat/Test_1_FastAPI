@@ -93,10 +93,10 @@ class Borrow(Base):
         Date, 
         nullable=False
     )
-    date_refund = Column(
+    return_date = Column(
         Date, 
-        CheckConstraint('date_refund >= date_borrow',
-                         name='check_date_refund'
+        CheckConstraint('return_date >= date_borrow',
+                         name='check_return_date'
                         ),
         nullable=True
     )
