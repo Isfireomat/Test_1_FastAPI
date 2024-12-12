@@ -20,13 +20,17 @@ class BookSchema(BaseModel):
     description: str = Field(
         max_length=1024
         )
-    author_id: int
+    author_id: int = Field(
+        ge=0
+        )
     count_available: int = Field(
         ge=0
         )
 
 class BorrowSchema(BaseModel):
-    book_id: int
+    book_id: int = Field(
+        ge=0
+        )
     reader_name: str = Field(
         min_length=1, 
         max_length=64
@@ -46,3 +50,14 @@ class BorrowSchema(BaseModel):
                 '''
                 )
         return values
+
+class BorrowCreateSchema(BaseModel):
+    book_id: int = Field(
+        ge=0
+        )
+    reader_name: str = Field(
+        min_length=1, 
+        max_length=64
+        )
+    date_borrow: Date
+    
