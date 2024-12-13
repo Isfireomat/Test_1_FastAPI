@@ -1,9 +1,8 @@
 from datetime import date
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
-
+    
 class AuthorSchema(BaseModel):
-    id:  Optional[int] = None
     name: str = Field(
         min_length=1, 
         max_length=64
@@ -13,9 +12,11 @@ class AuthorSchema(BaseModel):
         max_length=64
         )
     birthday: date
-
+    
+    class Config:
+        from_attributes = True
+        
 class BookSchema(BaseModel):
-    id:  Optional[int] = None
     title: str = Field(
         min_length=1, 
         max_length=128
@@ -29,9 +30,11 @@ class BookSchema(BaseModel):
     count_available: int = Field(
         ge=0
         )
+    
+    class Config:
+        from_attributes = True
 
 class BorrowSchema(BaseModel):
-    id:  Optional[int] = None
     book_id: int = Field(
         ge=0
         )
@@ -55,6 +58,10 @@ class BorrowSchema(BaseModel):
                 '''
                 )
         return values
+
+    class Config:
+        from_attributes = True
+
 
 class BorrowCreateSchema(BaseModel):
     book_id: int = Field(

@@ -1,26 +1,9 @@
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import insert, update
-from app.data_base import get_session
+from sqlalchemy import update
 from app.models import Book, Borrow
 from datetime import date
-
-# async def get_book_by_id(
-#                 session: AsyncSession, 
-#                 id: int
-#             ):
-#     stmt = select(Book).where(Book.id==id)
-#     result = await session.execute(stmt)
-#     return result.scalar_one_or_none()
-
-# async def get_borrow_by_id(
-#                 session: AsyncSession, 
-#                 id: int
-#             ):
-#     stmt = select(Borrow).where(Borrow.id==id)
-#     result = await session.execute(stmt)
-#     return result.scalar_one_or_none()
 
 async def update_return_date_borrow(
                                 session: AsyncSession,

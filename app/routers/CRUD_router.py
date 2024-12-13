@@ -39,7 +39,14 @@ def create_CRUD_router(
     crud = CRUD(model=model)
     router = APIRouter()
     
-    @router.post(f'{api}', response_model=schema)
+    class Id:
+        id: int      
+    
+    class WithId(schema,Id):
+        class Config:
+            from_attributes = True
+            
+    @router.post(f'{api}', response_model=WithId)
     async def create(
                     response: Response, 
                     object: schema,
@@ -56,7 +63,7 @@ def create_CRUD_router(
                 )
         return await handler()
 
-    @router.get(f'{api}/{{id}}', response_model=schema)
+    @router.get(f'{api}/{{id}}', response_model=WithId)
     async def read(
                     response: Response, 
                     id: int,
@@ -73,7 +80,7 @@ def create_CRUD_router(
                 )
         return await handler()
 
-    @router.get(f'{api}', response_model=List[schema])
+    @router.get(f'{api}', response_model=List[WithId])
     async def read_all(
                         response: Response, 
                         session: AsyncSession = Depends(session)
@@ -88,7 +95,7 @@ def create_CRUD_router(
                 )
         return await handler()
 
-    @router.put(f'{api}/{{id}}', response_model=schema)
+    @router.put(f'{api}/{{id}}', response_model=WithId)
     async def update(
                     response: Response, 
                     object: schema,
