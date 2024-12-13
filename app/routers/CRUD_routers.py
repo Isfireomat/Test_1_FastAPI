@@ -3,16 +3,41 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from fastapi_crudrouter import SQLAlchemyCRUDRouter
-from app.data_base import get_session, get_book_by_id, create_borrow, \
-                      get_borrow_by_id, update_return_date_borrow, \
+from app.data_base import get_session, \
+                       update_return_date_borrow, \
                       update_book_count_available_by_id
 from app.models import Author, Book, Borrow, \
                    AuthorSchema, BookSchema, BorrowSchema, \
-                   BorrowCreateSchema
+                   BorrowCreateSchema, ReturnDateSchema
+from app.routers.CRUD_router import create_CRUD_router
+from app.data_base import CRUD
 
-@borrow_router.post('/api/borrows', routing_model=BorrowSchema)
-async def borrows_create(
+author_router: APIRouter = create_CRUD_router(
+    model=Author,
+    schema=AuthorSchema,
+    api='/authors',
+    session=get_session
+    )
+
+book_router: APIRouter = create_CRUD_router(
+    model=Book,
+    schema=BookSchema,
+    api='/books',
+    session=get_session
+    )
+
+borrow_router: APIRouter = create_CRUD_router(
+    model=Borrow,
+    schema=BorrowSchema,
+    api='/borrows',
+    session=get_session
+    )
+
+borrow_crud = CRUD(model=Borrow)
+book_crud = CRUD(model=Book)
+
+@borrow_router.post('/borrows', response_model=BorrowSchema)
+async def create(
                         response: Response, 
                         borrow: BorrowCreateSchema,
                         session: AsyncSession = Depends(get_session)
@@ -27,43 +52,38 @@ async def borrows_create(
     
     При попытке выдать недоступную книгу возвращать соответствующую ошибку.
     '''
-
-    book = await get_book_by_id(
-                                id=borrow.book_id, 
-                                session=session
-                            )
     
+    book = await book_crud.read(
+                                session=session,
+                                id=borrow.book_id 
+                            )
     if not book:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, 
             detail="Book is not exists"
         )
-    
     if book.count_available <= 0: 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="Book is not available"
         )
-    
     try:
-        async with session.begin():
-            book = await update_book_count_available_by_id(
-                                                session=session,
-                                                id=book.id,
-                                                count=-1
-                                                )
-        
-            if not book:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Book barrow is bad"
-                )
-            
-            borrow: Optional[Borrow] = await create_borrow(
-                                                    borrow=borrow, 
-                                                    session=session
-                                                )
+        book = await update_book_count_available_by_id(
+                                            session=session,
+                                            id=book.id,
+                                            count=-1
+                                            )
     
+        if not book:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Book barrow is bad"
+            )
+        
+        borrow: Optional[Borrow] = await borrow_crud.create(
+                                                session=session,
+                                                object=borrow 
+                                            )
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -74,20 +94,19 @@ async def borrows_create(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"{e}"
         )
-
     if borrow is None: 
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
             detail="borrow is bad"
         )
-    
+    print("!!",borrow)
     return borrow
 
-@book_router.patch('/api/borrows/{id}/return', routing_model=BorrowSchema)
-async def borrows_return(
+@borrow_router.patch('/borrows/{id}/return', response_model=BorrowSchema)
+async def update(
                     response: Response,
                     id: int,
-                    return_date = Depends(),
+                    return_date: ReturnDateSchema,
                     session: AsyncSession = Depends(get_session)
                 ):
     '''
@@ -96,46 +115,52 @@ async def borrows_return(
     
     Увеличивать при возврате
     '''
-
-    if not return_date:
-        return_date = date.today()
     
-    borrow: Optional[Borrow] = await get_borrow_by_id(id=id)
+    borrow = await borrow_crud.read(
+        session=session,
+        id=id
+    )
 
     if not borrow:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="borrow is not exists"
         )
+    
+    if borrow.return_date:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="borrow have return"
+        )
+    
     try:
-        async with session.begin():
-            book = await update_book_count_available_by_id(
-                                                session=session,
-                                                id=book.id,
-                                                count=1
-                                                )
-        
-            if not book:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Book barrow is bad"
-                )
-        
-            borrow: Optional[Borrow] = await update_return_date_borrow(
-                                                                session=session,
-                                                                borrow=borrow,
-                                                                return_date=return_date
-                                                            )
+        book = await update_book_count_available_by_id(
+                                            session=session,
+                                            id=borrow.book_id,
+                                            count=1
+                                            )
+    
+        if not book:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Book barrow is bad"
+            )
+    
+        borrow: Optional[Borrow] = await borrow_crud.update(
+                                                            session=session,
+                                                            id=id,
+                                                            object=return_date
+                                                        )
     except SQLAlchemyError as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Database error: {str(e)}"
         )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{e}"
-        )
+    # except Exception as e:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_400_BAD_REQUEST,
+    #         detail=f"{e}"
+    #     )
     if not borrow:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, 
