@@ -4,22 +4,18 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from app.data_base import get_session, \
-                      update_book_count_available_by_id, CRUD
+from app.data_base import get_session, CRUD
 from app.models import Author, Book, Borrow, \
                    AuthorSchema, BookSchema, BorrowSchema
 from functools import wraps
 
 
 def router_update(router_set):
-    router_paths = []
-    router_methods = []
+    router_dict = []
     routers = []
     for router in router_set.routes[::-1]:
-        if (router.path not in router_paths) or\
-           (router.methods not in router_methods):
-            router_paths.append(router.path)
-            router_methods.append(router.methods)
+        if {f"{router.path}": router.methods} not in router_dict:
+            router_dict.append({f"{router.path}": router.methods})
             routers.append(router)
     router_set.routes = routers[::-1]
     
@@ -28,6 +24,7 @@ def http_handler(func):
         try:
             object = await func(*args, **kwargs)
         except Exception as e:
+            print(e)
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail=f'{e}'
@@ -35,7 +32,7 @@ def http_handler(func):
         if not object:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, 
-                detail='Object not found'
+                detail=f"{object}"
                 )
         return object
     return wrapper
@@ -59,7 +56,7 @@ def create_CRUD_router(
             class Config:
                 from_attributes = True
             
-    @router.post(f'{api}', response_model=schema)
+    @router.post(f'{api}', response_model=WithId)
     async def create(
                     response: Response, 
                     object: schema,

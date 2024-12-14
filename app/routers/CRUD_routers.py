@@ -3,11 +3,11 @@ from datetime import date
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from app.data_base import get_session, update_book_count_available_by_id
+from app.data_base import get_session
 from app.models import Author, Book, Borrow, \
                    AuthorSchema, BookSchema, BorrowSchema, \
                    BorrowCreateSchema, ReturnDateSchema
-from app.routers.CRUD_router import create_CRUD_router, Id, router_update
+from app.utils import create_CRUD_router, Id, router_update
 from app.data_base import CRUD
 
 author_router: APIRouter = create_CRUD_router(
@@ -40,10 +40,10 @@ class BorrowSchemaWithId(BorrowSchema, Id):
 
 @borrow_router.post('/borrows', response_model=BorrowSchemaWithId)
 async def create(
-                        response: Response, 
-                        borrow: BorrowCreateSchema,
-                        session: AsyncSession = Depends(get_session)
-                    ):
+                response: Response, 
+                borrow: BorrowCreateSchema,
+                session: AsyncSession = Depends(get_session)
+            ):
     '''
     Создание записи о выыдаче книги (POST /borrows).
     
@@ -173,4 +173,4 @@ async def update(
         )
     return borrow
 
-router_update(borrow_router)
+router_update(router_set=borrow_router)
