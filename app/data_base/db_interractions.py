@@ -29,8 +29,6 @@ class CRUD:
         return result.scalars().all()
 
     async def update(self, session: AsyncSession, id: int, object):
-        if hasattr(object,'id'):
-            object.id=id
         stmt = update(self.__model).where(self.__model.id==id)\
                .values(**object.model_dump())\
                .returning(*self.__model.__table__.columns)

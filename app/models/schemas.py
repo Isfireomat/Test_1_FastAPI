@@ -1,7 +1,8 @@
 from datetime import date
 from pydantic import BaseModel, Field, model_validator
 from typing import Optional
-    
+from fastapi import HTTPException, status
+
 class AuthorSchema(BaseModel):
     name: str = Field(
         min_length=1, 
@@ -45,17 +46,14 @@ class BorrowSchema(BaseModel):
     date_borrow: date
     return_date: Optional[date] = None
 
-    @model_validator(mode='before')
+    @model_validator(mode='after')
     def check_dates(cls, values):
-        print("!",values)
         date_borrow = values.date_borrow
         return_date = values.return_date
         if date_borrow and return_date and date_borrow > return_date:
-            raise ValueError(
-                '''
-                The refund date cant be longer 
-                for the date of borrow
-                '''
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='The refund date cant be longer for the date of borrow'
                 )
         return values
 

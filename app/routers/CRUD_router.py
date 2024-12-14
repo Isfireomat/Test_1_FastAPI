@@ -5,11 +5,24 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from app.data_base import get_session, \
-                       update_return_date_borrow, \
                       update_book_count_available_by_id, CRUD
 from app.models import Author, Book, Borrow, \
                    AuthorSchema, BookSchema, BorrowSchema
+from functools import wraps
 
+
+def router_update(router_set):
+    router_paths = []
+    router_methods = []
+    routers = []
+    for router in router_set.routes[::-1]:
+        if (router.path not in router_paths) or\
+           (router.methods not in router_methods):
+            router_paths.append(router.path)
+            router_methods.append(router.methods)
+            routers.append(router)
+    router_set.routes = routers[::-1]
+    
 def http_handler(func):
     async def wrapper(*args, **kwargs):
         try:
@@ -28,7 +41,9 @@ def http_handler(func):
     return wrapper
 
 T = TypeVar("T", bound=BaseModel)    
-
+class Id:
+        id: Optional[int] = None 
+        
 def create_CRUD_router(
         model, 
         schema: Type[T],
@@ -39,14 +54,12 @@ def create_CRUD_router(
     crud = CRUD(model=model)
     router = APIRouter()
     
-    class Id:
-        id: int      
     
     class WithId(schema,Id):
-        class Config:
-            from_attributes = True
+            class Config:
+                from_attributes = True
             
-    @router.post(f'{api}', response_model=WithId)
+    @router.post(f'{api}', response_model=schema)
     async def create(
                     response: Response, 
                     object: schema,
