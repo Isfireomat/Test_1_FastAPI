@@ -1,49 +1,46 @@
-from typing import Dict, Optional
-from datetime import date
-from fastapi import APIRouter, Depends, HTTPException, status, Response
+from typing import Optional
+from fastapi import Depends, HTTPException, status, Response
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from app.data_base import get_session
 from app.models import Author, Book, Borrow, \
                    AuthorSchema, BookSchema, BorrowSchema, \
                    BorrowCreateSchema, ReturnDateSchema
-from app.utils import create_CRUD_router, Id, router_update
+from app.utils import create_CRUD_router, add_id, UpdatingAPIRouter
 from app.data_base import CRUD
 
-author_router: APIRouter = create_CRUD_router(
+author_router: UpdatingAPIRouter = create_CRUD_router(
     model=Author,
     schema=AuthorSchema,
     api='/authors',
     session=get_session
     )
 
-book_router: APIRouter = create_CRUD_router(
+book_router: UpdatingAPIRouter = create_CRUD_router(
     model=Book,
     schema=BookSchema,
     api='/books',
     session=get_session
     )
 
-borrow_router: APIRouter = create_CRUD_router(
+borrow_router: UpdatingAPIRouter = create_CRUD_router(
     model=Borrow,
     schema=BorrowSchema,
     api='/borrows',
     session=get_session
     )
 
-borrow_crud = CRUD(model=Borrow)
-book_crud = CRUD(model=Book)
-class BorrowSchemaWithId(BorrowSchema, Id):
-    class Config:
-        from_attributes = True
-
+borrow_crud: CRUD = CRUD(model=Borrow)
+book_crud: CRUD = CRUD(model=Book)
+BorrowSchemaWithId: BaseModel = add_id(BorrowSchema)
 
 @borrow_router.post('/borrows', response_model=BorrowSchemaWithId)
 async def create(
                 response: Response, 
                 borrow: BorrowCreateSchema,
                 session: AsyncSession = Depends(get_session)
-            ):
+            ) -> BaseModel:
     '''
     Создание записи о выыдаче книги (POST /borrows).
     
@@ -55,7 +52,7 @@ async def create(
     При попытке выдать недоступную книгу возвращать соответствующую ошибку.
     '''
     try:
-        book = await book_crud.read(
+        book: Optional[Book] = await book_crud.read(
                                 session=session,
                                 id=borrow.book_id 
                             )
@@ -71,7 +68,7 @@ async def create(
             )
 
         book.count_available -= 1 
-        book = await book_crud.update(
+        book: Optional[Book] = await book_crud.update(
             session=session,
             id=book.id,
             object=BookSchema.model_validate(book)
@@ -110,7 +107,7 @@ async def update(
                     id: int,
                     return_date: ReturnDateSchema,
                     session: AsyncSession = Depends(get_session)
-                ):
+                ) -> BaseModel:
     '''
     Завершение выдачи (PATCH /borrows/{id}/return) 
     с указанием даты возврата.
@@ -118,7 +115,7 @@ async def update(
     Увеличивать при возврате
     '''
     
-    borrow = await borrow_crud.read(
+    borrow: Optional[Borrow] = await borrow_crud.read(
         session=session,
         id=id
     )
@@ -135,7 +132,7 @@ async def update(
             detail="borrow have return"
         )
     try:
-        book: Book = await book_crud.read(
+        book: Optional[Book] = await book_crud.read(
             session=session,
             id=borrow.book_id
         ) 
@@ -172,5 +169,3 @@ async def update(
             detail="borrow is bad"
         )
     return borrow
-
-router_update(router_set=borrow_router)

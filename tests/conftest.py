@@ -13,7 +13,7 @@ from app.main import app
 from typing import AsyncGenerator
 
 DATABASE_URL: str = f"postgresql+asyncpg://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/postgres"
-DATABASE_URL_TEST = f"postgresql+asyncpg://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/test_db"
+DATABASE_URL_TEST: str = f"postgresql+asyncpg://{os.getenv('DB_USER')}:{os.getenv('DB_PASS')}@{os.getenv('DB_HOST')}:{os.getenv('DB_PORT')}/test_db"
 
 async def create_test_database():
     engine = create_async_engine(DATABASE_URL)
