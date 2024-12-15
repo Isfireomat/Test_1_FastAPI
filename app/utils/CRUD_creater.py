@@ -69,10 +69,13 @@ T = TypeVar("T", bound=BaseModel)
 class Id:
         id: Optional[int] = None 
 
-def add_id(schema: Type[T]):
+def add_id(schema: Type[T], postscript: str = ''):
     class WithId(schema,Id):
-            class Config:
-                from_attributes = True
+        
+        class Config:
+            from_attributes = True
+            
+    WithId.__name__ = f"{schema.__name__}WithId {postscript}"
     return WithId
         
 def create_CRUD_router(
@@ -84,9 +87,8 @@ def create_CRUD_router(
     
     crud: CRUD = CRUD(model=model)
     router: UpdatingAPIRouter = UpdatingAPIRouter()
-    WithId: Type[BaseModel] = add_id(schema)
+    WithId: Type[BaseModel] = add_id(schema=schema, postscript='CRUD')
     
-   
     @router.post(f'{api}', response_model=WithId)
     async def create(
                     response: Response, 
