@@ -10,13 +10,6 @@ DATABASE_URL: str = f"postgresql+asyncpg://{environ.get('DB_USER')}:{environ.get
 engine: Engine = create_async_engine(DATABASE_URL)
 async_session_local = sessionmaker(bind=engine,class_=AsyncSession)
 
-async def create_start_table() -> None:
-    """
-    При старте создаёт таблицы
-    """
-    async with engine.begin() as connect:
-        await connect.run_sync(Base.metadata.create_all(bind=engine))
-
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Возвращает сессию psql и при ошибке в работе с сессией

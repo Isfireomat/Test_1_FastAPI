@@ -14,4 +14,7 @@ RUN pip install poetry && \
     
 EXPOSE 8000
 
-CMD poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+CMD poetry run alembic upgrade head && \
+    poetry run pytest -p no:warnings && \
+    poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    
